@@ -1,0 +1,4 @@
+audioFiles/
+audioResources/
+node_modules/
+.env
