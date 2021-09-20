@@ -1,16 +1,23 @@
 import { Message } from 'discord.js';
-import { CommandParameters } from './types/CommandParameters';
+import { CommandParameters } from './../types/CommandParameters';
 import { joinVoiceChannel, getVoiceConnections } from '@discordjs/voice';
 import {
     createPlayerConfig,
     isPlayerExists,
     pause,
-    play,
     resume,
 } from './AudioHandler';
 import ytdl from 'ytdl-core';
 import axios from 'axios';
 import fs from 'fs';
+import { Track } from '../types/Track';
+import {
+    addToQueue,
+    getQueue,
+    playNext,
+    queueToString,
+    removeQueueItem,
+} from './QueueManager';
 
 const commands: {
     [commandName: string]: (parameters: CommandParameters) => void;
@@ -35,6 +42,12 @@ const commands: {
         }
 
         voiceConnection.destroy();
+
+        const queue = getQueue(guildId);
+        if (queue) {
+            queue.isPlaying = false;
+            queue.tracks = [];
+        }
     },
     play: async ({ message, args }: CommandParameters): Promise<void> => {
         if (!joinChannel(message)) {
@@ -67,8 +80,13 @@ const commands: {
             return;
         }
 
-        message.reply(`Playing **${videoResult.title}**`);
-        play(guildId, audioURL);
+        const track: Track = {
+            title: decodeHtmlEntity(videoResult.title),
+            path: audioURL,
+            requestChannelId: message.channelId,
+        };
+
+        addToQueue(guildId, track);
     },
     pause: ({ message }: CommandParameters): void => {
         if (!joinChannel(message)) {
@@ -80,8 +98,19 @@ const commands: {
             return;
         }
 
-        message.reply('Paused');
-        pause(guildId);
+        const queue = getQueue(guildId);
+        if (!queue || queue.tracks.length === 0) {
+            message.reply('Queue is empty');
+            return;
+        }
+
+        if (queue.isPlaying) {
+            message.reply('Paused');
+            pause(guildId);
+            queue.isPlaying = false;
+        } else {
+            message.reply('Nothing is playing');
+        }
     },
     resume: ({ message }: CommandParameters): void => {
         if (!joinChannel(message)) {
@@ -93,8 +122,78 @@ const commands: {
             return;
         }
 
-        message.reply('Resumed');
-        resume(guildId);
+        const queue = getQueue(guildId);
+        if (!queue || queue.tracks.length === 0) {
+            message.reply('Queue is empty');
+            return;
+        }
+
+        if (!queue.isPlaying) {
+            message.reply('Resumed');
+            resume(guildId);
+            queue.isPlaying = true;
+        } else {
+            message.reply('Already playing');
+        }
+    },
+    skip: ({ message }: CommandParameters): void => {
+        const guildId = getGuildId(message);
+        if (!guildId) {
+            return;
+        }
+
+        const queue = getQueue(guildId);
+        if (!queue || queue.tracks.length === 0) {
+            message.reply('Queue is empty');
+            return;
+        }
+
+        playNext(guildId);
+    },
+    remove: ({ message, args }: CommandParameters): void => {
+        if (args.length <= 1) {
+            message.reply(
+                'Remove requies a second argument - queue item index to remove'
+            );
+            return;
+        }
+
+        const indexToRemove = parseInt(args[1]);
+        if (isNaN(indexToRemove) || indexToRemove < 2) {
+            message.reply('Invalid index, expected 2 or above');
+            return;
+        }
+
+        const guildId = getGuildId(message);
+        if (!guildId) {
+            return;
+        }
+
+        const queue = getQueue(guildId);
+        if (!queue || queue.tracks.length === 0) {
+            message.reply('Queue is empty');
+            return;
+        } else if (queue.tracks.length < indexToRemove) {
+            message.reply(`There's no item at index ${indexToRemove}`);
+            return;
+        }
+
+        removeQueueItem(guildId, indexToRemove - 1);
+        message.reply('Removed');
+    },
+    queue: ({ message }: CommandParameters): void => {
+        const guildId = getGuildId(message);
+        if (!guildId) {
+            return;
+        }
+
+        const queue = getQueue(guildId);
+        if (!queue) {
+            message.reply('Queue is empty');
+            return;
+        }
+
+        message.reply(queueToString(queue));
     },
 };
 
@@ -133,7 +232,7 @@ const getGuildId = (message: Message) => {
     const guildId = message.guild?.id || '';
 
     if (!guildId) {
-        message.reply('Something went wrong. (Undefined guildID)');
+        message.reply('Something went wrong. (Undefined guildId)');
         return;
     }
 
@@ -151,14 +250,14 @@ const getGuildVoiceConnection = (message: Message, guildId: string) => {
     return connection;
 };
 
-const establishPlayer = (message: Message, guildID: string) => {
-    const voiceConnection = getGuildVoiceConnection(message, guildID);
+const establishPlayer = (message: Message, guildId: string) => {
+    const voiceConnection = getGuildVoiceConnection(message, guildId);
     if (!voiceConnection) {
         return false;
     }
 
-    if (!isPlayerExists(guildID)) {
-        createPlayerConfig(guildID, voiceConnection);
+    if (!isPlayerExists(guildId)) {
+        createPlayerConfig(guildId, voiceConnection);
     }
 
     return true;
@@ -168,11 +267,11 @@ const searchVideo = async (searchQuery: string) => {
     const res = await axios.get(
         `https://www.googleapis.com/youtube/v3/search?key=${
             process.env.YT_API_KEY
-        }&q=${encodeURIComponent(searchQuery)}&part=snippet`
+        }&q=${encodeURIComponent(searchQuery)}&part=snippet&type=video`
     );
 
     if (res.status !== 200) {
-        console.log(`Search request failed: ${res.statusText}
+        console.error(`Search request failed: ${res.statusText}
 ${res.data}`);
         return;
     }
@@ -215,7 +314,7 @@ const getAudioFromVideoId = async (videoId: string) => {
         responseType: 'stream',
     });
     if (downloadRequest.status !== 200) {
-        console.log('Error retriving audio URL');
+        console.error('Error retriving audio URL');
         return;
     }
 
@@ -227,3 +326,6 @@ const getAudioFromVideoId = async (videoId: string) => {
 
     return fileName;
 };
+
+const decodeHtmlEntity = (str: string) =>
+    str.replace(/&#(\d+);/g, (_, dec) => String.fromCharCode(dec));
