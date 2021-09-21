@@ -1,8 +1,13 @@
 import { Message } from 'discord.js';
 import { CommandParameters } from './../types/CommandParameters';
-import { joinVoiceChannel, getVoiceConnections } from '@discordjs/voice';
+import {
+    joinVoiceChannel,
+    getVoiceConnections,
+    VoiceConnectionState,
+} from '@discordjs/voice';
 import {
     createPlayerConfig,
+    getPlayerConfig,
     isPlayerExists,
     pause,
     resume,
@@ -36,12 +41,12 @@ const commands: {
             return;
         }
 
-        const voiceConnection = getGuildVoiceConnection(message, guildId);
+        const voiceConnection = getGuildVoiceConnection(guildId);
         if (!voiceConnection) {
             return;
         }
-
-        voiceConnection.destroy();
+        voiceConnection.disconnect();
+        pause(guildId);
 
         const queue = getQueue(guildId);
         if (queue) {
@@ -220,11 +225,24 @@ const joinChannel = (message: Message): boolean => {
         return false;
     }
 
-    joinVoiceChannel({
-        channelId: voice.channelId,
-        guildId,
-        adapterCreator,
-    });
+    let connection = getGuildVoiceConnection(guildId);
+    if (connection && connection.joinConfig.channelId !== voice.channelId) {
+        connection.destroy();
+        connection = undefined;
+    }
+
+    if (!connection) {
+        const connection = joinVoiceChannel({
+            channelId: voice.channelId,
+            guildId,
+            adapterCreator,
+        });
+
+        if (isPlayerExists(guildId)) {
+            connection.subscribe(getPlayerConfig(guildId).player);
+        }
+    }
+
     return true;
 };
 
@@ -239,11 +257,10 @@ const getGuildId = (message: Message) => {
     return guildId;
 };
 
-const getGuildVoiceConnection = (message: Message, guildId: string) => {
+const getGuildVoiceConnection = (guildId: string) => {
     const connection = getVoiceConnections().get(guildId);
 
     if (!connection) {
-        message.reply("I'm not in a voice channel.");
         return;
     }
 
@@ -251,7 +268,7 @@ const getGuildVoiceConnection = (message: Message, guildId: string) => {
 };
 
 const establishPlayer = (message: Message, guildId: string) => {
-    const voiceConnection = getGuildVoiceConnection(message, guildId);
+    const voiceConnection = getGuildVoiceConnection(guildId);
     if (!voiceConnection) {
         return false;
     }

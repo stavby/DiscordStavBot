@@ -22,12 +22,10 @@ export const createPlayerConfig = (
     connection: VoiceConnection
 ) => {
     const player: AudioPlayer = createAudioPlayer();
+
     player.on(
         'stateChange',
-        (oldState: AudioPlayerState, newState: AudioPlayerState) => {
-            console.log(
-                `Changed from ${oldState.status} to ${newState.status}`
-            );
+        (_oldState: AudioPlayerState, newState: AudioPlayerState) => {
             if (
                 newState.status === AudioPlayerStatus.Idle &&
                 getQueue(guildId)?.isPlaying
@@ -37,6 +35,10 @@ export const createPlayerConfig = (
         }
     );
 
+    player.on('error', error => {
+        console.error(`Error: ${error.message} with player`);
+    });
+
     playerConfigs[guildId] = { player };
 
     connection.subscribe(player);
@@ -44,7 +46,7 @@ export const createPlayerConfig = (
 
 export const isPlayerExists = (guildId: string) => !!playerConfigs[guildId];
 
-const getPlayerConfig = (guildId: string) => playerConfigs[guildId];
+export const getPlayerConfig = (guildId: string) => playerConfigs[guildId];
 
 export const play = (guildId: string, resourcePath: string) => {
     const playerConfig = getPlayerConfig(guildId);
