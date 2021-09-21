@@ -1,5 +1,6 @@
 import { Channel, ChannelResolvable, Client, Intents } from 'discord.js';
 import { createCommand, isCommandExists } from './commands/CommandFactory';
+import { CommandDoesntExistError } from './errors/CommandDoesntExistError';
 
 let client: Client;
 
@@ -20,14 +21,17 @@ const createClient = () => {
         if (message.content[0] !== '!') {
             return;
         }
-        const args = message.content.substring(1).split(' ');
-        const command = args[0];
 
-        if (!isCommandExists(command)) {
-            return;
+        try {
+            createCommand(
+                message.content.substring(1).split(' '),
+                message
+            ).execute();
+        } catch (error) {
+            if (!(error instanceof CommandDoesntExistError)) {
+                throw error;
+            }
         }
-
-        createCommand(args, message).execute();
     });
 };
 

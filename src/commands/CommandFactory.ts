@@ -1,4 +1,5 @@
 import { Message } from 'discord.js';
+import { CommandDoesntExistError } from '../errors/CommandDoesntExistError';
 import { Command } from './Command';
 import { GayCommand } from './GayCommand';
 import { LeaveCommand } from './LeaveCommand';
@@ -30,7 +31,7 @@ export const isCommandExists = (commandName: string) =>
 export const createCommand = (args: string[], message: Message) => {
     const commandName = args[0];
     if (!isCommandExists(commandName)) {
-        throw new Error('Tried to create non existing command');
+        throw new CommandDoesntExistError();
     }
 
     return new commands[commandName](args, message);
