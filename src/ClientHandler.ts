@@ -1,5 +1,5 @@
 import { Channel, ChannelResolvable, Client, Intents } from 'discord.js';
-import { executeCommand, isCommandExists } from './CommandsManager';
+import { createCommand, isCommandExists } from './commands/CommandFactory';
 
 let client: Client;
 
@@ -27,7 +27,7 @@ const createClient = () => {
             return;
         }
 
-        executeCommand({ client, command, args, message });
+        createCommand(args, message).execute();
     });
 };
 

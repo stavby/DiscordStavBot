@@ -1,5 +1,5 @@
 import fs from 'fs';
-import { currentlyDownloading } from './CommandsManager';
+import { currentlyDownloading } from './YoutubeHandler';
 import { isFileInQueue } from './QueueManager';
 
 export const startGarbageCollection = () => {

@@ -1,6 +1,6 @@
 import { TextBasedChannel, TextBasedChannels } from 'discord.js';
-import { Queue } from '../types/Queue';
-import { Track } from '../types/Track';
+import { Queue } from './types/Queue';
+import { Track } from './types/Track';
 import { pause, play, stop } from './AudioHandler';
 import { getChannel } from './ClientHandler';
 

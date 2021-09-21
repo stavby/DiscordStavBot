@@ -8,6 +8,7 @@ import {
     VoiceConnection,
 } from '@discordjs/voice';
 import { getQueue, playNext } from './QueueManager';
+import { getGuildVoiceConnection } from './VoiceChannelHandler';
 
 let playerConfigs: {
     [guildId: string]: {
@@ -90,3 +91,16 @@ export const isResourceUsed = (resourcePath: string) =>
     Object.values(playerConfigs).some(
         playerConfigs => playerConfigs.path === resourcePath
     );
+
+export const establishPlayer = (guildId: string) => {
+    const voiceConnection = getGuildVoiceConnection(guildId);
+    if (!voiceConnection) {
+        return false;
+    }
+
+    if (!isPlayerExists(guildId)) {
+        createPlayerConfig(guildId, voiceConnection);
+    }
+
+    return true;
+};
