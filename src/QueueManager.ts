@@ -41,7 +41,7 @@ export const playNext = (guildId: string) => {
         throw new Error('Tried to play next with an empty queue!');
     }
 
-    const lastTrack = guildQueue.tracks.splice(0, 1)[0];
+    const lastTrack = guildQueue.tracks.shift() as Track;
     if (guildQueue.tracks.length === 0) {
         guildQueue.isPlaying = false;
         stop(guildId);
