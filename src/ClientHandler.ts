@@ -1,4 +1,10 @@
-import { Channel, ChannelResolvable, Client, Intents } from 'discord.js';
+import {
+    Channel,
+    ChannelResolvable,
+    Client,
+    Intents,
+    TextBasedChannels,
+} from 'discord.js';
 import { createCommand, isCommandExists } from './commands/CommandFactory';
 import { CommandDoesntExistError } from './errors/CommandDoesntExistError';
 
