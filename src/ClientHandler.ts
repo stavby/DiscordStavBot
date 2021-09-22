@@ -44,10 +44,10 @@ const createClient = () => {
         }
     });
 
-    client.on('interactionCreate', interaction => {
+    client.on('interactionCreate', async interaction => {
         if (interaction.isButton()) {
             try {
-                createInteraction(interaction).execute();
+                await createInteraction(interaction).execute();
             } catch (error) {
                 if (!(error instanceof InteractionDoesntExistError)) {
                     throw error;
@@ -81,5 +81,5 @@ export const sendMessage = (
         );
     }
 
-    (channel as TextBasedChannels).send(message);
+    return (channel as TextBasedChannels).send(message);
 };

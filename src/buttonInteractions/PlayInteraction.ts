@@ -1,6 +1,7 @@
-import { Message } from 'discord.js';
+import { Message, TextBasedChannels } from 'discord.js';
 import { establishPlayer } from '../AudioHandler';
 import { sendMessage } from '../ClientHandler';
+import { deleteAllSearchMessages } from '../commands/SearchCommand';
 import { getGuildId } from '../GuildHandler';
 import { addToQueue } from '../QueueManager';
 import { Track } from '../types/Track';
@@ -62,5 +63,7 @@ export class PlayInteraction extends ButtonInteraction {
         };
 
         addToQueue(guildId, track);
+
+        deleteAllSearchMessages(this.interaction.channel as TextBasedChannels);
     }
 }
