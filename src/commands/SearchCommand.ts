@@ -32,7 +32,7 @@ export const deleteAllSearchMessages = async (channel: TextBasedChannels) => {
     });
 };
 
-const MESSAGE_DELETE_TIMOUT = 10000;
+const MESSAGE_DELETE_TIMOUT = 60000;
 
 const deleteMessagesAfterTimeout = (channel: TextBasedChannels) =>
     setTimeout(async () => {
