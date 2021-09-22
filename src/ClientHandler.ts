@@ -3,10 +3,14 @@ import {
     ChannelResolvable,
     Client,
     Intents,
+    MessageOptions,
+    MessagePayload,
     TextBasedChannels,
 } from 'discord.js';
+import { createInteraction } from './buttonInteractions/ButtonInteractionFactory';
 import { createCommand, isCommandExists } from './commands/CommandFactory';
 import { CommandDoesntExistError } from './errors/CommandDoesntExistError';
+import { InteractionDoesntExistError } from './errors/InteractionDoesntExistError';
 
 let client: Client;
 
@@ -39,6 +43,23 @@ const createClient = () => {
             }
         }
     });
+
+    client.on('interactionCreate', interaction => {
+        if (interaction.isButton()) {
+            try {
+                createInteraction(
+                    interaction.customId.split(' '),
+                    interaction
+                ).execute();
+            } catch (error) {
+                if (!(error instanceof InteractionDoesntExistError)) {
+                    throw error;
+                }
+
+                console.warn(error.message);
+            }
+        }
+    });
 };
 
 export const getClient = () => {
@@ -52,7 +73,10 @@ export const getClient = () => {
 export const getChannel = (channelId: string): Channel | null =>
     client.channels.resolve(channelId);
 
-export const sendMessage = (channelId: string, message: string) => {
+export const sendMessage = (
+    channelId: string,
+    message: string | MessagePayload | MessageOptions
+) => {
     const channel = getChannel(channelId);
     if (!channel || !channel.isText()) {
         console.warn(
