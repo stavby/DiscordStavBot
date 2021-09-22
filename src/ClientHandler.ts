@@ -45,3 +45,14 @@ export const getClient = () => {
 
 export const getChannel = (channelId: string): Channel | null =>
     client.channels.resolve(channelId);
+
+export const sendMessage = (channelId: string, message: string) => {
+    const channel = getChannel(channelId);
+    if (!channel || !channel.isText()) {
+        console.warn(
+            `Tried to send message to non existing or voice channel! \nMessage: ${message} \nChannelId: ${channelId}`
+        );
+    }
+
+    (channel as TextBasedChannels).send(message);
+};
