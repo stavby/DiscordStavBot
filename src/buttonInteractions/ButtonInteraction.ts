@@ -1,11 +1,14 @@
-import { Interaction } from 'discord.js';
+import {
+    Interaction,
+    ButtonInteraction as discordJSButtonInteraction,
+} from 'discord.js';
+
+export const getNameFromCustomId = (customId: string) => customId.split(' ')[0];
 
 export abstract class ButtonInteraction {
-    args: string[];
-    interaction: Interaction;
+    interaction: discordJSButtonInteraction;
 
-    constructor(args: string[], interaction: Interaction) {
-        this.args = args;
+    constructor(interaction: discordJSButtonInteraction) {
         this.interaction = interaction;
     }
 

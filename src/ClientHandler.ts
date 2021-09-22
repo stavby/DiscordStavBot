@@ -47,10 +47,7 @@ const createClient = () => {
     client.on('interactionCreate', interaction => {
         if (interaction.isButton()) {
             try {
-                createInteraction(
-                    interaction.customId.split(' '),
-                    interaction
-                ).execute();
+                createInteraction(interaction).execute();
             } catch (error) {
                 if (!(error instanceof InteractionDoesntExistError)) {
                     throw error;

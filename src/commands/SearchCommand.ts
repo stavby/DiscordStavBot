@@ -4,8 +4,12 @@ import {
     MessageEmbed,
     TextBasedChannels,
 } from 'discord.js';
+import {
+    constructPlayCutomId,
+    PlayInteractionName,
+} from '../buttonInteractions/PlayInteraction';
 import { getChannel, sendMessage } from '../ClientHandler';
-import { searchMultipleVideos } from '../YoutubeHandler';
+import { decodeHtmlEntity, searchMultipleVideos } from '../YoutubeHandler';
 import { Command } from './Command';
 
 export class SearchCommand extends Command {
@@ -16,7 +20,7 @@ export class SearchCommand extends Command {
 
         searchResults.forEach(currSearchResult => {
             const VideoEmbed = new MessageEmbed()
-                .setTitle(currSearchResult.title)
+                .setTitle(decodeHtmlEntity(currSearchResult.title))
                 .setURL(
                     `https://www.youtube.com/watch?v=${currSearchResult.id}`
                 )
@@ -24,7 +28,7 @@ export class SearchCommand extends Command {
 
             const PlayVideoButton = new MessageActionRow().addComponents(
                 new MessageButton()
-                    .setCustomId(`play ${currSearchResult.id}`)
+                    .setCustomId(constructPlayCutomId(currSearchResult.id))
                     .setLabel('Play')
                     .setStyle('SUCCESS')
             );
