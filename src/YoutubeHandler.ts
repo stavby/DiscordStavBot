@@ -1,6 +1,8 @@
 import ytdl from 'ytdl-core';
 import fs from 'fs';
 import axios from 'axios';
+import { RawYoutubeVideo } from './types/RawYoutubeVideo';
+import { ParsedYoutubeVideo } from './types/ParsedYoutubeVideo';
 
 export const currentlyDownloading: string[] = [];
 
@@ -72,28 +74,14 @@ ${res.data}`);
 
 export const searchMultipleVideos = async (
     searchQuery: string
-): Promise<
-    {
-        id: string;
-        title: string;
-        thumbnail: string;
-    }[]
-> => {
+): Promise<ParsedYoutubeVideo[]> => {
     const res = await getYoutubeSearchResults(searchQuery);
 
-    return res.data.items.map(
-        (currentVideo: {
-            id: { videoId: string };
-            snippet: {
-                title: string;
-                thumbnails: { default: { url: string } };
-            };
-        }) => ({
-            id: currentVideo.id.videoId,
-            title: currentVideo.snippet.title,
-            thumbnail: currentVideo.snippet.thumbnails.default.url,
-        })
-    );
+    return res.data.items.map((currentVideo: RawYoutubeVideo) => ({
+        id: currentVideo.id.videoId,
+        title: currentVideo.snippet.title,
+        thumbnailURL: currentVideo.snippet.thumbnails.default.url,
+    }));
 };
 
 export const decodeHtmlEntity = (str: string) =>

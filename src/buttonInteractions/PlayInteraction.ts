@@ -2,7 +2,6 @@ import { Message, TextBasedChannels } from 'discord.js';
 import { establishPlayer } from '../AudioHandler';
 import { sendMessage } from '../ClientHandler';
 import { deleteAllSearchMessages } from '../commands/SearchCommand';
-import { getGuildId } from '../GuildHandler';
 import { addToQueue } from '../QueueManager';
 import { Track } from '../types/Track';
 import { establishVoiceChannel } from '../VoiceChannelHandler';
@@ -41,7 +40,6 @@ export class PlayInteraction extends ButtonInteraction {
         }
 
         const audioURL = await getAudioFromVideoId(args.videoId);
-
         if (!audioURL) {
             sendMessage(
                 this.interaction.channelId as string,
