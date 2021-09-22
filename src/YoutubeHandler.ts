@@ -1,6 +1,8 @@
 import ytdl from 'ytdl-core';
 import fs from 'fs';
 import axios, { AxiosError } from 'axios';
+import { RawYoutubeVideo } from './types/RawYoutubeVideo';
+import { ParsedYoutubeVideo } from './types/ParsedYoutubeVideo';
 
 export const currentlyDownloading: string[] = [];
 
@@ -74,29 +76,15 @@ export const searchVideo = async (searchQuery: string) => {
 
 export const searchMultipleVideos = async (
     searchQuery: string
-): Promise<
-    {
-        id: string;
-        title: string;
-        thumbnail: string;
-    }[]
-> => {
+): Promise<ParsedYoutubeVideo[]> => {
     try {
         const res = await getYoutubeSearchResults(searchQuery);
 
-        return res.data.items.map(
-            (currentVideo: {
-                id: { videoId: string };
-                snippet: {
-                    title: string;
-                    thumbnails: { default: { url: string } };
-                };
-            }) => ({
-                id: currentVideo.id.videoId,
-                title: currentVideo.snippet.title,
-                thumbnail: currentVideo.snippet.thumbnails.default.url,
-            })
-        );
+        return res.data.items.map((currentVideo: RawYoutubeVideo) => ({
+            id: currentVideo.id.videoId,
+            title: currentVideo.snippet.title,
+            thumbnail: currentVideo.snippet.thumbnails.default.url,
+        }));
     } catch (error: any | AxiosError) {
         if (axios.isAxiosError(error)) {
             console.error(error.response);

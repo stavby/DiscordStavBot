@@ -1,7 +1,4 @@
-import {
-    Interaction,
-    ButtonInteraction as discordJSButtonInteraction,
-} from 'discord.js';
+import { ButtonInteraction as discordJSButtonInteraction } from 'discord.js';
 
 export const getNameFromCustomId = (customId: string) => customId.split(' ')[0];
 

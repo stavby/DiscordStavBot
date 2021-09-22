@@ -9,9 +9,11 @@ import {
     constructPlayCutomId,
     PlayInteractionName,
 } from '../buttonInteractions/PlayInteraction';
-import { getChannel, sendMessage } from '../ClientHandler';
+import { sendMessage } from '../ClientHandler';
 import { decodeHtmlEntity, searchMultipleVideos } from '../YoutubeHandler';
 import { Command } from './Command';
+
+const MESSAGE_DELETE_TIMOUT = 60000;
 
 const filterPlayButtonMessages = (messages: Message[]) =>
     messages.filter(currMessage =>
@@ -32,8 +34,6 @@ export const deleteAllSearchMessages = async (channel: TextBasedChannels) => {
     });
 };
 
-const MESSAGE_DELETE_TIMOUT = 60000;
-
 const deleteMessagesAfterTimeout = (channel: TextBasedChannels) =>
     setTimeout(async () => {
         await deleteAllSearchMessages(channel);
@@ -43,19 +43,23 @@ export class SearchCommand extends Command {
     async execute() {
         await deleteAllSearchMessages(this.message.channel);
 
-        const searchQuery = this.args.slice(1).join(' ');
+        if (this.args.length <= 1) {
+            this.message.reply('Search what exactly?');
+            return;
+        }
 
+        const searchQuery = this.args.slice(1).join(' ');
         const searchResults = await searchMultipleVideos(searchQuery);
 
         searchResults.forEach(async currSearchResult => {
-            const VideoEmbed = new MessageEmbed()
+            const videoEmbed = new MessageEmbed()
                 .setTitle(decodeHtmlEntity(currSearchResult.title))
                 .setURL(
                     `https://www.youtube.com/watch?v=${currSearchResult.id}`
                 )
-                .setThumbnail(currSearchResult.thumbnail);
+                .setThumbnail(currSearchResult.thumbnailURL);
 
-            const PlayVideoButton = new MessageActionRow().addComponents(
+            const playVideoButton = new MessageActionRow().addComponents(
                 new MessageButton()
                     .setCustomId(constructPlayCutomId(currSearchResult.id))
                     .setLabel('Play')
@@ -63,8 +67,8 @@ export class SearchCommand extends Command {
             );
 
             await sendMessage(this.message.channelId, {
-                embeds: [VideoEmbed],
-                components: [PlayVideoButton],
+                embeds: [videoEmbed],
+                components: [playVideoButton],
             });
         });
 

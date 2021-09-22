@@ -1,7 +1,4 @@
-import {
-    Interaction,
-    ButtonInteraction as discordJSButtonInteraction,
-} from 'discord.js';
+import { ButtonInteraction as discordJSButtonInteraction } from 'discord.js';
 import { InteractionDoesntExistError } from '../errors/InteractionDoesntExistError';
 import { ButtonInteraction, getNameFromCustomId } from './ButtonInteraction';
 import { PlayInteraction, PlayInteractionName } from './PlayInteraction';
