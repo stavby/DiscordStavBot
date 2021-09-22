@@ -43,12 +43,15 @@ export const getAudioFromVideoId = async (videoId: string) => {
     return fileName;
 };
 
-export const searchVideo = async (searchQuery: string) => {
-    const res = await axios.get(
+const getYoutubeSearchResults = async (searchQuery: string) =>
+    await axios.get(
         `https://www.googleapis.com/youtube/v3/search?key=${
             process.env.YT_API_KEY
         }&q=${encodeURIComponent(searchQuery)}&part=snippet&type=video`
     );
+
+export const searchVideo = async (searchQuery: string) => {
+    const res = await getYoutubeSearchResults(searchQuery);
 
     if (res.status !== 200) {
         console.error(`Search request failed: ${res.statusText}
@@ -65,6 +68,32 @@ ${res.data}`);
         id: resultItems[0].id.videoId,
         title: resultItems[0].snippet.title,
     };
+};
+
+export const searchMultipleVideos = async (
+    searchQuery: string
+): Promise<
+    {
+        id: string;
+        title: string;
+        thumbnail: string;
+    }[]
+> => {
+    const res = await getYoutubeSearchResults(searchQuery);
+
+    return res.data.items.map(
+        (currentVideo: {
+            id: { videoId: string };
+            snippet: {
+                title: string;
+                thumbnails: { default: { url: string } };
+            };
+        }) => ({
+            id: currentVideo.id.videoId,
+            title: currentVideo.snippet.title,
+            thumbnail: currentVideo.snippet.thumbnails.default.url,
+        })
+    );
 };
 
 export const decodeHtmlEntity = (str: string) =>

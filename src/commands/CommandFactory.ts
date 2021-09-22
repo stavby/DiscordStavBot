@@ -1,4 +1,5 @@
 import { Message } from 'discord.js';
+import { CommandDoesntExistError } from '../errors/CommandDoesntExistError';
 import { Command } from './Command';
 import { GayCommand } from './GayCommand';
 import { LeaveCommand } from './LeaveCommand';
@@ -7,6 +8,7 @@ import { PlayCommand } from './PlayCommand';
 import { QueueCommand } from './QueueCommand';
 import { RemoveCommand } from './RemoveCommand';
 import { ResumeCommand } from './ResumeCommand';
+import { SearchCommand } from './SearchCommand';
 import { SkipCommand } from './SkipCommand';
 import { SummonCommand } from './SummonCommand';
 
@@ -22,6 +24,7 @@ const commands: {
     skip: SkipCommand,
     remove: RemoveCommand,
     queue: QueueCommand,
+    search: SearchCommand,
 };
 
 export const isCommandExists = (commandName: string) =>
@@ -30,7 +33,7 @@ export const isCommandExists = (commandName: string) =>
 export const createCommand = (args: string[], message: Message) => {
     const commandName = args[0];
     if (!isCommandExists(commandName)) {
-        throw new Error('Tried to create non existing command');
+        throw new CommandDoesntExistError();
     }
 
     return new commands[commandName](args, message);

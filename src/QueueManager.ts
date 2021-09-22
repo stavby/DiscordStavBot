@@ -2,7 +2,7 @@ import { TextBasedChannel, TextBasedChannels } from 'discord.js';
 import { Queue } from './types/Queue';
 import { Track } from './types/Track';
 import { pause, play, stop } from './AudioHandler';
-import { getChannel } from './ClientHandler';
+import { getChannel, sendMessage } from './ClientHandler';
 
 let queues: { [guildId: string]: Queue } = {};
 
@@ -41,7 +41,7 @@ export const playNext = (guildId: string) => {
         throw new Error('Tried to play next with an empty queue!');
     }
 
-    const lastTrack = guildQueue.tracks.splice(0, 1)[0];
+    const lastTrack = guildQueue.tracks.shift() as Track;
     if (guildQueue.tracks.length === 0) {
         guildQueue.isPlaying = false;
         stop(guildId);
@@ -67,17 +67,6 @@ export const playCurrent = (guildId: string) => {
 const playTrack = (guildID: string, track: Track) => {
     sendMessage(track.requestChannelId, `Now Playing **${track.title}**`);
     play(guildID, track.path);
-};
-
-const sendMessage = (channelId: string, message: string) => {
-    const channel = getChannel(channelId);
-    if (!channel || !channel.isText()) {
-        console.warn(
-            `Tried to send message to non existing or voice channel! \nMessage: ${message} \nChannelId: ${channelId}`
-        );
-    }
-
-    (channel as TextBasedChannels).send(message);
 };
 
 export const queueToString = (queue: Queue) => {

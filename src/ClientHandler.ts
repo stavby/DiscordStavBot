@@ -1,5 +1,16 @@
-import { Channel, ChannelResolvable, Client, Intents } from 'discord.js';
+import {
+    Channel,
+    ChannelResolvable,
+    Client,
+    Intents,
+    MessageOptions,
+    MessagePayload,
+    TextBasedChannels,
+} from 'discord.js';
+import { createInteraction } from './buttonInteractions/ButtonInteractionFactory';
 import { createCommand, isCommandExists } from './commands/CommandFactory';
+import { CommandDoesntExistError } from './errors/CommandDoesntExistError';
+import { InteractionDoesntExistError } from './errors/InteractionDoesntExistError';
 
 let client: Client;
 
@@ -20,14 +31,31 @@ const createClient = () => {
         if (message.content[0] !== '!') {
             return;
         }
-        const args = message.content.substring(1).split(' ');
-        const command = args[0];
 
-        if (!isCommandExists(command)) {
-            return;
+        try {
+            createCommand(
+                message.content.substring(1).split(' '),
+                message
+            ).execute();
+        } catch (error) {
+            if (!(error instanceof CommandDoesntExistError)) {
+                throw error;
+            }
         }
+    });
 
-        createCommand(args, message).execute();
+    client.on('interactionCreate', async interaction => {
+        if (interaction.isButton()) {
+            try {
+                await createInteraction(interaction).execute();
+            } catch (error) {
+                if (!(error instanceof InteractionDoesntExistError)) {
+                    throw error;
+                }
+
+                console.warn(error.message);
+            }
+        }
     });
 };
 
@@ -41,3 +69,17 @@ export const getClient = () => {
 
 export const getChannel = (channelId: string): Channel | null =>
     client.channels.resolve(channelId);
+
+export const sendMessage = (
+    channelId: string,
+    message: string | MessagePayload | MessageOptions
+) => {
+    const channel = getChannel(channelId);
+    if (!channel || !channel.isText()) {
+        console.warn(
+            `Tried to send message to non existing or voice channel! \nMessage: ${message} \nChannelId: ${channelId}`
+        );
+    }
+
+    return (channel as TextBasedChannels).send(message);
+};
