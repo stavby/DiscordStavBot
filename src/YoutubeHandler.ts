@@ -70,16 +70,28 @@ ${res.data}`);
     };
 };
 
-export const searchMultipleVideos = async (searchQuery: string) => {
+export const searchMultipleVideos = async (
+    searchQuery: string
+): Promise<
+    {
+        id: string;
+        title: string;
+        thumbnail: string;
+    }[]
+> => {
     const res = await getYoutubeSearchResults(searchQuery);
 
     return res.data.items.map(
         (currentVideo: {
             id: { videoId: string };
-            snippet: { title: string };
+            snippet: {
+                title: string;
+                thumbnails: { default: { url: string } };
+            };
         }) => ({
             id: currentVideo.id.videoId,
             title: currentVideo.snippet.title,
+            thumbnail: currentVideo.snippet.thumbnails.default.url,
         })
     );
 };
