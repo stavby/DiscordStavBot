@@ -8,6 +8,7 @@ import { PlayCommand } from './PlayCommand';
 import { QueueCommand } from './QueueCommand';
 import { RemoveCommand } from './RemoveCommand';
 import { ResumeCommand } from './ResumeCommand';
+import { SearchCommand } from './SearchCommand';
 import { SkipCommand } from './SkipCommand';
 import { SummonCommand } from './SummonCommand';
 
@@ -23,6 +24,7 @@ const commands: {
     skip: SkipCommand,
     remove: RemoveCommand,
     queue: QueueCommand,
+    search: SearchCommand,
 };
 
 export const isCommandExists = (commandName: string) =>
