@@ -1,6 +1,6 @@
 import ytdl from 'ytdl-core';
 import fs from 'fs';
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 
 export const currentlyDownloading: string[] = [];
 
@@ -51,23 +51,25 @@ const getYoutubeSearchResults = async (searchQuery: string) =>
     );
 
 export const searchVideo = async (searchQuery: string) => {
-    const res = await getYoutubeSearchResults(searchQuery);
+    try {
+        const res = await getYoutubeSearchResults(searchQuery);
 
-    if (res.status !== 200) {
-        console.error(`Search request failed: ${res.statusText}
-${res.data}`);
+        const resultItems = res.data.items;
+        if (resultItems.length === 0) {
+            return 'no results';
+        }
+
+        return {
+            id: resultItems[0].id.videoId,
+            title: resultItems[0].snippet.title,
+        };
+    } catch (error) {
+        if (axios.isAxiosError(error)) {
+            console.error(error.response);
+        }
+
         return;
     }
-
-    const resultItems = res.data.items;
-    if (resultItems.length === 0) {
-        return 'no results';
-    }
-
-    return {
-        id: resultItems[0].id.videoId,
-        title: resultItems[0].snippet.title,
-    };
 };
 
 export const searchMultipleVideos = async (
@@ -79,21 +81,29 @@ export const searchMultipleVideos = async (
         thumbnail: string;
     }[]
 > => {
-    const res = await getYoutubeSearchResults(searchQuery);
+    try {
+        const res = await getYoutubeSearchResults(searchQuery);
 
-    return res.data.items.map(
-        (currentVideo: {
-            id: { videoId: string };
-            snippet: {
-                title: string;
-                thumbnails: { default: { url: string } };
-            };
-        }) => ({
-            id: currentVideo.id.videoId,
-            title: currentVideo.snippet.title,
-            thumbnail: currentVideo.snippet.thumbnails.default.url,
-        })
-    );
+        return res.data.items.map(
+            (currentVideo: {
+                id: { videoId: string };
+                snippet: {
+                    title: string;
+                    thumbnails: { default: { url: string } };
+                };
+            }) => ({
+                id: currentVideo.id.videoId,
+                title: currentVideo.snippet.title,
+                thumbnail: currentVideo.snippet.thumbnails.default.url,
+            })
+        );
+    } catch (error: any | AxiosError) {
+        if (axios.isAxiosError(error)) {
+            console.error(error.response);
+        }
+
+        return [];
+    }
 };
 
 export const decodeHtmlEntity = (str: string) =>
